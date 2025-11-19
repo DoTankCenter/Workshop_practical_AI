@@ -1,0 +1,104 @@
+
+Dokumentation: Workshop Gruppverktyg – Frågor och Svar
+1. Fråga: Vad ska verktyget göra?
+Svar:
+
+Skapa grupper för en workshop baserat på en lista med namn och företag.
+Möjlighet att klistra in data eller läsa in en Excel-fil.
+Ange antal grupper eller antal personer per grupp.
+Dynamisk visualisering av grupperna.
+Företagsbalanserad fördelning.
+Förslag vid ojämn fördelning.
+Exportera grupper till PDF.
+Offline-lösning i en enda HTML-fil.
+
+
+2. Fråga: Vilka indataformat ska stödjas?
+Svar:
+
+Klistra in textlista i formatet Namn,Företag per rad.
+Ladda upp Excel-fil med två kolumner (Namn, Företag).
+
+
+3. Fråga: Hur ska grupperna skapas?
+Svar:
+
+Jämn fördelning av företag för bra mix.
+Algoritm som roterar företag mellan grupper.
+Möjlighet att ange antal grupper eller antal personer per grupp.
+
+
+4. Fråga: Hur ska visualiseringen se ut?
+Svar:
+
+Grafiska boxar för grupper.
+Färgkodning per företag för tydlighet.
+Dynamisk uppdatering vid ändringar.
+
+
+5. Fråga: Vad händer om det inte går jämnt upp?
+Svar:
+
+Visa förslag:
+
+Öka antal grupper.
+Ändra gruppstorlek.
+
+
+Förslag visas i en tydlig textsektion.
+
+
+6. Fråga: Vilka PDF-alternativ ska finnas?
+Svar:
+
+Rapport med alla grupper: Tabell med avbockningsrutor för avcheckning.
+En grupp per sida: Snygg layout för utskrift och placering på bord.
+Export sker via jsPDF.
+
+
+7. Fråga: Ska det fungera offline?
+Svar:
+
+Ja, allt i en enda HTML-fil med inbäddad JavaScript och CSS.
+Externa bibliotek laddas via CDN (XLSX och jsPDF).
+
+
+8. Fråga: Kan man flytta deltagare manuellt?
+Svar:
+
+Ja, drag-and-drop implementeras.
+Om en person flyttas till en annan grupp, flyttas en lämplig person tillbaka för balans.
+
+
+9. Fråga: Hur gör man PDF:erna snyggare?
+Svar:
+
+Rapporten med alla grupper: Tabell med [ ] för avcheckning.
+En grupp per sida: Stor rubrik, punktlista, luftigt layout.
+Nästa steg: Lägg till logotyp, färgtema och grafiska element.
+
+
+10. Fråga: Felmeddelande med jsPDF?
+Svar:
+
+Felet berodde på att jsPDF inte laddades korrekt.
+Lösning: Lägg till korrekta <script>-taggar för CDN:
+HTML<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>Show more lines
+
+
+
+Levererat:
+
+Komplett HTML-fil med:
+
+Klistra in lista / Excel-import
+Företagsbalanserad algoritm
+Grafisk visualisering med färgkodning
+Drag-and-drop med balans
+PDF-export (två alternativ)
+Offline-kompatibilitet
+
+
+
+
+Vill du att jag skapar en snygg PDF-design med logotyp och färgtema som nästa steg, eller ska jag även ge dig en färdig Excel-fil med den fejkade listan?

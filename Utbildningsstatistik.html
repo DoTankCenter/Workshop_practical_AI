@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topp 20 Utbildningar</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body { font-family: Arial, sans-serif; margin: 20px; }
+  h1 { text-align: center; }
+  .controls { display: flex; justify-content: center; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+  select, button, input[type="file"] { padding: 5px; margin: 5px; }
+  #chartContainer { resize: both; overflow: auto; width: 800px; height: 500px; border: 1px solid #ccc; padding: 10px; margin: auto; }
+  canvas { width: 100%; height: 100%; }
+  table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+  th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+  th { background-color: #f4f4f4; }
+  input[type="number"] { width: 80px; }
+  .action-buttons { margin-top: 15px; display: flex; gap: 10px; }
+  .btn { padding: 10px 15px; background-color: #0078d7; color: white; border: none; cursor: pointer; }
+  .btn:hover { background-color: #005fa3; }
+</style>
+</head>
+<body>
+<h1>Topp 20 Utbildningar med flest behöriga sökande</h1>
+<div class="controls">
+  <label>Gruppera efter:
+    <select id="groupBy">
+      <option value="Universitet">Universitet</option>
+      <option value="Program">Program</option>
+    </select>
+  </label>
+  <label>Diagramtyp:
+    <select id="chartType">
+      <option value="bar">Stapeldiagram</option>
+      <option value="pie">Cirkeldiagram</option>
+      <option value="line">Linjediagram</option>
+    </select>
+  </label>
+  <label>Visa värde:
+    <select id="valueType">
+      <option value="Behöriga">Behöriga sökande</option>
+      <option value="Ranking">Ranking</option>
+    </select>
+  </label>
+</div>
+
+<div id="chartContainer">
+  <canvas id="chart"></canvas>
+</div>
+
+<h2>Data (markera för att inkludera):</h2>
+<table>
+  <thead>
+    <tr>
+      <th>Inkludera</th>
+      <th>Universitet</th>
+      <th>Program</th>
+      <th>Behöriga</th>
+      <th>Ranking</th>
+    </tr>
+  </thead>
+  <tbody id="dataTable"></tbody>
+</table>
+
+<div class="action-buttons">
+  <button class="btn" id="saveJson">Spara som JSON</button>
+  <input type="file" id="loadJson" accept=".json">
+  <button class="btn" id="exportChart">Exportera diagram som PNG</button>
+</div>
+
+<script>
+let rawData = [
+  { Universitet: "Uppsala universitet", Program: "Juristprogrammet", Behöriga: 6754, Ranking: 0 },
+  { Universitet: "Stockholms universitet", Program: "Juristprogrammet", Behöriga: 6660, Ranking: 0 },
+  { Universitet: "Lunds universitet", Program: "Juristprogrammet", Behöriga: 6133, Ranking: 0 },
+  { Universitet: "Göteborgs universitet", Program: "Juristprogrammet", Behöriga: 5939, Ranking: 0 },
+  { Universitet: "Lunds universitet", Program: "Ekonomie kandidatprogram", Behöriga: 5158, Ranking: 0 },
+  { Universitet: "Uppsala universitet", Program: "Ekonomie kandidatprogram", Behöriga: 5089, Ranking: 0 },
+  { Universitet: "Karolinska institutet", Program: "Läkarprogrammet", Behöriga: 4704, Ranking: 0 },
+  { Universitet: "Uppsala universitet", Program: "Läkarprogrammet", Behöriga: 4534, Ranking: 0 },
+  { Universitet: "Örebro universitet", Program: "Juristprogrammet", Behöriga: 4430, Ranking: 0 },
+  { Universitet: "Göteborgs universitet", Program: "Ekonomie kandidatprogram", Behöriga: 4319, Ranking: 0 },
+  { Universitet: "Lunds universitet", Program: "Läkarprogrammet", Behöriga: 4252, Ranking: 0 },
+  { Universitet: "Linköpings universitet", Program: "Läkarprogrammet", Behöriga: 4131, Ranking: 0 },
+  { Universitet: "Umeå universitet", Program: "Läkarprogrammet", Behöriga: 3941, Ranking: 0 },
+  { Universitet: "Göteborgs universitet", Program: "Läkarprogrammet", Behöriga: 3790, Ranking: 0 },
+  { Universitet: "Örebro universitet", Program: "Läkarprogrammet", Behöriga: 3784, Ranking: 0 },
+  { Universitet: "Karlstads universitet", Program: "Juristprogrammet", Behöriga: 3654, Ranking: 0 },
+  { Universitet: "Uppsala universitet", Program: "Psykologprogrammet", Behöriga: 3587, Ranking: 0 },
+  { Universitet: "Stockholms universitet", Program: "Kandidatprogram i företagsekonomi", Behöriga: 3536, Ranking: 0 },
+  { Universitet: "Göteborgs universitet", Program: "Psykologprogrammet", Behöriga: 3506, Ranking: 0 },
+  { Universitet: "Göteborgs universitet", Program: "Socionomprogrammet", Behöriga: 3425, Ranking: 0 }
+];
+
+let chart;
+let includedRows = rawData.map(() => true);
+
+function renderTable() {
+  const tbody = document.getElementById('dataTable');
+  tbody.innerHTML = '';
+  rawData.forEach((item, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><input type="checkbox" data-index="${index}" ${includedRows[index] ? 'checked' : ''}></td>
+      <td>${item.Universitet}</td>
+      <td>${item.Program}</td>
+      <td>${item.Behöriga}</td>
+      <td><input type="number" value="${item.Ranking}" data-rank="${index}" min="0"></td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+function aggregateData(groupBy, valueType) {
+  const grouped = {};
+  rawData.forEach((item, index) => {
+    if (!includedRows[index]) return;
+    const key = item[groupBy];
+    grouped[key] = (grouped[key] || 0) + item[valueType];
+  });
+  return { labels: Object.keys(grouped), values: Object.values(grouped) };
+}
+
+function renderChart() {
+  const groupBy = document.getElementById('groupBy').value;
+  const chartType = document.getElementById('chartType').value;
+  const valueType = document.getElementById('valueType').value;
+  const { labels, values } = aggregateData(groupBy, valueType);
+
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById('chart'), {
+    type: chartType,
+    data: {
+      labels: labels,
+      datasets: [{
+        label: valueType,
+        data: values,
+        backgroundColor: labels.map(() => `rgba(${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},${Math.floor(Math.random()*255)},0.6)`),
+        borderColor: 'rgba(0,0,0,0.8)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: chartType !== 'bar' }
+      },
+      scales: chartType === 'bar' || chartType === 'line' ? {
+        y: { beginAtZero: true }
+      } : {}
+    }
+  });
+}
+
+function saveAsJSON() {
+  const exportData = rawData.map((item, index) => ({
+    ...item,
+    Inkluderad: includedRows[index]
+  }));
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'utbildningar.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function loadFromJSON(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = JSON.parse(e.target.result);
+    rawData = data.map(d => ({
+      Universitet: d.Universitet,
+      Program: d.Program,
+      Behöriga: d.Behöriga,
+      Ranking: d.Ranking || 0
+    }));
+    includedRows = data.map(d => d.Inkluderad !== false);
+    renderTable();
+    renderChart();
+  };
+  reader.readAsText(file);
+}
+
+function exportChartAsPNG() {
+  const link = document.createElement('a');
+  link.href = chart.toBase64Image();
+  link.download = 'diagram.png';
+  link.click();
+}
+
+document.getElementById('groupBy').addEventListener('change', renderChart);
+document.getElementById('chartType').addEventListener('change', renderChart);
+document.getElementById('valueType').addEventListener('change', renderChart);
+document.getElementById('dataTable').addEventListener('change', e => {
+  if (e.target.type === 'checkbox') {
+    includedRows[e.target.dataset.index] = e.target.checked;
+    renderChart();
+  }
+  if (e.target.dataset.rank !== undefined) {
+    rawData[e.target.dataset.rank].Ranking = parseInt(e.target.value) || 0;
+    renderChart();
+  }
+});
+document.getElementById('saveJson').addEventListener('click', saveAsJSON);
+document.getElementById('loadJson').addEventListener('change', e => {
+  if (e.target.files.length > 0) loadFromJSON(e.target.files[0]);
+});
+document.getElementById('exportChart').addEventListener('click', exportChartAsPNG);
+
+// Observer för att trigga omritning vid resize
+const container = document.getElementById('chartContainer');
+const resizeObserver = new ResizeObserver(() => {
+  chart.resize();
+});
+resizeObserver.observe(container);
+
+renderTable();
+renderChart();
+</script>
+</body>
+</html>

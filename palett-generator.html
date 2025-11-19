@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Färgpalettgenerator</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
+    h1 { text-align: center; }
+    .palette { display: flex; margin: 10px 0; }
+    .color-box { flex: 1; height: 80px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: bold; }
+    .controls { text-align: center; margin-bottom: 20px; }
+    input[type="text"] { padding: 5px; width: 200px; }
+    button { padding: 8px 12px; margin: 5px; cursor: pointer; }
+    .saved-palettes { margin-top: 20px; }
+    .saved-item { margin-bottom: 10px; }
+</style>
+</head>
+<body>
+<h1>Färgpalettgenerator</h1>
+<div class="controls">
+    <input type="text" id="paletteName" placeholder="Palettens namn">
+    <button onclick="generatePalette()">Generera palett</button>
+    <button onclick="savePalette()">Spara palett</button>
+</div>
+<div id="palette" class="palette"></div>
+<h2>Sparade paletter</h2>
+<div id="savedPalettes" class="saved-palettes"></div>
+
+<script>
+const paletteContainer = document.getElementById('palette');
+const savedPalettesContainer = document.getElementById('savedPalettes');
+let currentPalette = [];
+
+function randomColor() {
+    return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+}
+
+function generatePalette() {
+    currentPalette = [];
+    paletteContainer.innerHTML = '';
+    for (let i = 0; i < 5; i++) {
+        const color = randomColor();
+        currentPalette.push(color);
+        const div = document.createElement('div');
+        div.className = 'color-box';
+        div.style.backgroundColor = color;
+        div.textContent = color;
+        div.onclick = () => navigator.clipboard.writeText(color);
+        paletteContainer.appendChild(div);
+    }
+}
+
+function savePalette() {
+    const name = document.getElementById('paletteName').value.trim();
+    if (!name) { alert('Ange ett namn för paletten!'); return; }
+    const saved = JSON.parse(localStorage.getItem('palettes') || '[]');
+    saved.push({ name, colors: currentPalette });
+    localStorage.setItem('palettes', JSON.stringify(saved));
+    renderSavedPalettes();
+}
+
+function renderSavedPalettes() {
+    savedPalettesContainer.innerHTML = '';
+    const saved = JSON.parse(localStorage.getItem('palettes') || '[]');
+    saved.forEach((p, index) => {
+        const div = document.createElement('div');
+        div.className = 'saved-item';
+        div.innerHTML = `<strong>${p.name}</strong>`;
+        const colorsDiv = document.createElement('div');
+        colorsDiv.className = 'palette';
+        p.colors.forEach(color => {
+            const cDiv = document.createElement('div');
+            cDiv.className = 'color-box';
+            cDiv.style.backgroundColor = color;
+            cDiv.textContent = color;
+            colorsDiv.appendChild(cDiv);
+        });
+        div.appendChild(colorsDiv);
+        savedPalettesContainer.appendChild(div);
+    });
+}
+
+// Autospar återställning
+renderSavedPalettes();
+generatePalette();
+</script>
+</body>
+</html>

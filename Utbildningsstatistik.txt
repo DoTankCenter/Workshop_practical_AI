@@ -1,0 +1,109 @@
+https://uhr.se/studier-och-antagning/antagningsstatistik/topp-20-behoriga-sokande-urval-1-ht2025/
+
+
+Universitet/högskola
+	
+Anmälningskod
+	
+Program
+	
+Behöriga
+sökande
+Uppsala universitet 	UU-P2800 	Juristprogrammet 	6754
+Stockholms universitet 	SU-29143 	Juristprogrammet 	6660
+Lunds universitet 	LU-80300 	Juristprogrammet 	6133
+Göteborgs universitet 	GU-85000 	Juristprogrammet 	5939
+Lunds universitet 	LU-80415 	Ekonomie kandidatprogram 	5158
+Uppsala universitet 	UU-P2100 	Ekonomie kandidatprogram 	5089
+Karolinska institutet 	KI-41006 	Läkarprogrammet 	4704
+Uppsala universitet 	UU-P3200 	Läkarprogrammet 	4534
+Örebro universitet 	ORU-39501 	Juristprogrammet 	4430
+Göteborgs universitet 	GU-81002 	Ekonomie kandidatprogram 	4319
+Lunds universitet 	LU-80510 	Läkarprogrammet 	4252
+Linköpings universitet 	LIU-50313 	Läkarprogrammet 	4131
+Umeå universitet 	UMU-P1308 	Läkarprogrammet 	3941
+Göteborgs universitet 	GU-01000 	Läkarprogrammet 	3790
+Örebro universitet 	ORU-89500 	Läkarprogrammet 	3784
+Karlstads universitet 	KAU-80485 	Juristprogrammet 	3654
+Uppsala universitet 	UU-P2550 	Psykologprogrammet 	3587
+Stockholms universitet 	SU-31126 	Kandidatprogram i företagsekonomi 	3536
+Göteborgs universitet 	GU-74001 	Psykologprogrammet 	3506
+Göteborgs universitet 	GU-79002 	Socionomprogrammet 	3425
+
+3. Fråga: Ge mig HTML-koden redo att kopieras
+Svar:
+Jag gav en första version med:
+
+Visualisering via Chart.js.
+Filter för kategori.
+Möjlighet att ändra värden i gränssnittet.
+
+
+4. Fråga: Skapa interaktiv visualisering för Topp 20 utbildningar
+Svar:
+Jag skapade en HTML-fil med:
+
+Dropdown för gruppering (Universitet/Program).
+Val av diagramtyp (Bar, Pie, Line).
+Dynamisk uppdatering.
+
+
+5. Fråga: Gör diagrammet större och lägg till tabell med checkboxar
+Svar:
+Jag uppdaterade koden:
+
+Större diagram.
+Tabell med alla rader och checkboxar för att inkludera/utesluta data.
+
+
+6. Fråga: Lägg till kolumn för Ranking och visa statistik på den
+Svar:
+Jag lade till:
+
+Kolumn för Ranking med manuellt redigerbara värden.
+Dropdown för att välja om diagrammet visar Behöriga eller Ranking.
+
+
+7. Fråga: Lägg till funktion för att spara data som JSON
+Svar:
+Jag lade till:
+
+Knapp Spara som JSON som exporterar all data (inklusive ranking och inkluderingsstatus).
+
+
+8. Fråga: Jag vill kunna läsa in JSON igen och exportera diagram som bild
+Svar:
+Jag lade till:
+
+Ladda upp JSON för att återställa tabellen.
+Exportera diagram som PNG.
+
+
+9. Fråga: Gör diagrammet resizable genom att dra i hörnet
+Svar:
+Jag lade till:
+
+Container med resize: both; overflow: auto;.
+maintainAspectRatio: false i Chart.js.
+ResizeObserver för att trigga chart.resize().
+
+
+10. Slutlig leverans
+Jag gav en komplett HTML-fil med:
+
+Dynamisk gruppering och värdeval.
+Tabell med checkboxar och ranking.
+JSON export/import.
+PNG-export.
+Resizable diagram.
+
+
+Slutlig kod
+Finns i den senaste versionen jag skickade (kopiera och spara som index.html).
+
+Tips för workshop
+
+Låt deltagarna börja med en enkel prompt:
+"Skapa en HTML-fil som visualiserar data med ett interaktivt diagram och filter."
+Sedan iterera med nya krav: tabell, ranking, export, import, resizable.
+Diskutera hur prompten påverkar resultatet.

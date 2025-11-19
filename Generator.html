@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Förslagsgenerator</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        margin: 20px;
+        background: #f9f9f9;
+        color: #333;
+    }
+    h1 {
+        color: #4CAF50;
+        text-align: center;
+    }
+    .container {
+        max-width: 700px;
+        margin: auto;
+        background: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    button {
+        padding: 12px 18px;
+        margin: 10px 5px;
+        font-size: 16px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        background-color: #4CAF50;
+        color: white;
+        transition: background 0.3s;
+    }
+    button:hover {
+        background-color: #45a049;
+    }
+    #result {
+        margin-top: 20px;
+        font-weight: bold;
+        font-size: 18px;
+        color: #222;
+        background: #e8f5e9;
+        padding: 10px;
+        border-radius: 6px;
+    }
+    ul {
+        margin-top: 20px;
+        padding-left: 20px;
+    }
+    li {
+        margin-bottom: 8px;
+        background: #f1f8e9;
+        padding: 8px;
+        border-radius: 4px;
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Förslagsgenerator</h1>
+    <p>Klicka på knappen för att slumpa fram ett nytt förslag:</p>
+    <button onclick="generateSuggestion()">Generera förslag</button>
+    <button onclick="exportSuggestions()">Exportera till textfil</button>
+
+    <div id="result"></div>
+    <h2>Sparade förslag:</h2>
+    <ul id="savedList"></ul>
+</div>
+
+<script>
+// Nya inspirerande listor
+const verbs = [
+    "skapa diagram", "rita flödesscheman", "generera färgpaletter", "bygga interaktiva quiz",
+    "visualisera statistik", "jämföra alternativ", "planera projekt", "simulera scenarier",
+    "beräkna kostnader", "designa layout"
+];
+
+const purposes = [
+    "för att planera en resa", "för att skapa en budget", "för att designa en hemsida",
+    "för att lära mig ett nytt språk", "för att organisera idéer", "för att analysera kunddata",
+    "för att skapa en presentation", "för att förbättra arbetsflöden", "för att testa hypoteser",
+    "för att skapa en interaktiv rapport"
+];
+
+const properties = [
+    "intuitivt", "snyggt designat", "interaktivt", "mobilanpassat", "offline-stöd",
+    "snabbt att starta", "helt gratis", "utan inloggning", "med mörkt läge", "med drag-and-drop"
+];
+
+const functions = [
+    "exportera som bild", "dela via QR-kod", "skapa PDF-rapport", "generera slumpmässiga exempel",
+    "visa realtidsstatistik", "ha autospar", "stödja flera språk", "skapa mallar",
+    "integrera med kalender", "ha AI-förslag"
+];
+
+let savedSuggestions = [];
+
+// Slumpa ett element från en lista
+function randomItem(list) {
+    return list[Math.floor(Math.random() * list.length)];
+}
+
+// Generera förslag
+function generateSuggestion() {
+    const verb = randomItem(verbs);
+    const purpose = randomItem(purposes);
+    const property = randomItem(properties);
+    const func = randomItem(functions);
+
+    const suggestion = `Jag vill kunna ${verb} ${purpose}. Jag vill att programmet också är ${property} och kan ${func}.`;
+
+    document.getElementById("result").textContent = suggestion;
+
+    // Spara i listan
+    savedSuggestions.push(suggestion);
+    const li = document.createElement("li");
+    li.textContent = suggestion;
+    document.getElementById("savedList").appendChild(li);
+}
+
+// Exportera till textfil
+function exportSuggestions() {
+    if (savedSuggestions.length === 0) {
+        alert("Inga förslag att exportera!");
+        return;
+    }
+    const blob = new Blob([savedSuggestions.join("\n")], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "forslag.txt";
+    a.click();
+    URL.revokeObjectURL(url);
+}
+</script>
+</body>
+</html>

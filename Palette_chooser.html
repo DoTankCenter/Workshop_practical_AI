@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Färgväljare med Paletter</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; }
+    h1 { text-align: center; }
+    .palette-container { display: flex; gap: 20px; margin-bottom: 20px; flex-wrap: wrap; }
+    .palette { border: 1px solid #ccc; padding: 10px; background: #fff; border-radius: 8px; text-align: center; }
+    .color-wheel { width: 200px; height: 200px; border-radius: 50%; background: conic-gradient(red, orange, yellow, green, blue, indigo, violet, red); position: relative; cursor: crosshair; }
+    .linear-bar { width: 200px; height: 40px; background: linear-gradient(to right, red, orange, yellow, green, blue, indigo, violet); cursor: crosshair; }
+    .lab-grid { display: grid; grid-template-columns: repeat(5, 40px); gap: 5px; justify-content: center; }
+    .lab-grid div { width: 40px; height: 40px; border-radius: 4px; cursor: pointer; }
+    #selected-color { margin-top: 20px; padding: 10px; background: #fff; border-radius: 8px; }
+    input[type="text"] { width: 100%; padding: 5px; margin-top: 5px; }
+    button { margin-top: 10px; padding: 8px 12px; cursor: pointer; }
+    #current-palette { display: flex; gap: 5px; margin-top: 10px; }
+    .color-box { width: 40px; height: 40px; border-radius: 4px; }
+    #saved-palettes { margin-top: 20px; }
+    .saved-palette { margin-bottom: 10px; padding: 10px; background: #fff; border-radius: 8px; }
+</style>
+</head>
+<body>
+<h1>Färgväljare</h1>
+
+<div class="palette-container">
+    <!-- Cirkulär palett -->
+    <div class="palette">
+        <h3>Cirkulär</h3>
+        <div class="color-wheel" id="color-wheel"></div>
+    </div>
+    <!-- Linjär palett -->
+    <div class="palette">
+        <h3>Linjär</h3>
+        <div class="linear-bar" id="linear-bar"></div>
+    </div>
+    <!-- LAB palett -->
+    <div class="palette">
+        <h3>LAB</h3>
+        <div class="lab-grid" id="lab-grid"></div>
+    </div>
+</div>
+
+<div id="selected-color">
+    <h3>Vald färg</h3>
+    <div id="color-preview" style="width:50px;height:50px;border-radius:4px;"></div>
+    <p id="color-codes"></p>
+    <input type="text" id="color-name" placeholder="Namnge färgen">
+    <button onclick="addColorToPalette()">Lägg till i palett</button>
+</div>
+
+<div>
+    <h3>Bygg din palett</h3>
+    <div id="current-palette"></div>
+    <input type="text" id="palette-name" placeholder="Namnge paletten">
+    <button onclick="savePalette()">Spara palett</button>
+</div>
+
+<div id="saved-palettes">
+    <h3>Sparade paletter</h3>
+</div>
+
+<script>
+const labColors = ['#F4E1D2','#D9BF77','#A67C52','#6F4E37','#3E2723','#E6E6FA','#B0E0E6','#98FB98','#FFDAB9','#FFB6C1'];
+const labGrid = document.getElementById('lab-grid');
+labColors.forEach(c=>{
+    const div=document.createElement('div');
+    div.style.background=c;
+    div.onclick=()=>selectColor(c);
+    labGrid.appendChild(div);
+});
+
+let selectedColor=null;
+let currentPalette=[];
+
+function selectColor(color){
+    selectedColor=color;
+    document.getElementById('color-preview').style.background=color;
+    const rgb=hexToRgb(color);
+    const hsl=rgbToHsl(rgb.r,rgb.g,rgb.b);
+    document.getElementById('color-codes').innerHTML=`HEX: ${color}<br>RGB: (${rgb.r},${rgb.g},${rgb.b})<br>HSL: (${hsl.h},${hsl.s}%,${hsl.l}%)`;
+}
+
+function hexToRgb(hex){
+    const bigint=parseInt(hex.slice(1),16);
+    return {r:(bigint>>16)&255,g:(bigint>>8)&255,b:bigint&255};
+}
+function rgbToHsl(r,g,b){
+    r/=255;g/=255;b/=255;
+    const max=Math.max(r,g,b),min=Math.min(r,g,b);
+    let h,s,l=(max+min)/2;
+    if(max===min){h=s=0;}else{
+        const d=max-min;
+        s=l>0.5?d/(2-max-min):d/(max+min);
+        switch(max){
+            case r:h=(g-b)/d+(g<b?6:0);break;
+            case g:h=(b-r)/d+2;break;
+            case b:h=(r-g)/d+4;break;
+        }
+        h*=60;
+    }
+    return {h:Math.round(h),s:Math.round(s*100),l:Math.round(l*100)};
+}
+
+function addColorToPalette(){
+    if(!selectedColor)return alert('Välj en färg först!');
+    const name=document.getElementById('color-name').value||selectedColor;
+    currentPalette.push({color:selectedColor,name});
+    updateCurrentPalette();
+}
+
+function updateCurrentPalette() {
+    const container = document.getElementById('current-palette');
+    container.innerHTML = '';
+    currentPalette.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'color-box';
+        div.style.background = item.color;
+        div.title = item.name;
+        container.appendChild(div);
+    });
+}
+function savePalette(){
+    const name=document.getElementById('palette-name').value||'Unnamed';
+    const palettes=JSON.parse(localStorage.getItem('palettes')||'[]');
+    palettes.push({name,colors:currentPalette});
+    localStorage.setItem('palettes',JSON.stringify(palettes));
+    currentPalette=[];
+    updateCurrentPalette();
+    renderSavedPalettes();
+}
+function renderSavedPalettes(){
+    const container=document.getElementById('saved-palettes');
+    container.innerHTML='<h3>Sparade paletter</h3>';
+    const palettes=JSON.parse(localStorage.getItem('palettes')||'[]');
+    palettes.forEach(p=>{
+        const div=document.createElement('div');
+        div.className='saved-palette';
+        div.innerHTML=`<strong>${p.name}</strong><br>`;
+        p.colors.forEach(c=>{
+            const box=document.createElement('div');
+            box.className='color-box';
+            box.style.background=c.color;
+            box.title=c.name;
+            div.appendChild(box);
+        });
+        container.appendChild(div);
+    });
+}
+renderSavedPalettes();
+
+// Klick på cirkeln
+document.getElementById('color-wheel').addEventListener('click',e=>{
+    const rect=e.target.getBoundingClientRect();
+    const x=e.clientX-rect.left-rect.width/2;
+    const y=e.clientY-rect.top-rect.height/2;
+    const angle=Math.atan2(y,x)*(180/Math.PI)+180;
+    const hue=Math.round(angle);
+    selectColor(`hsl(${hue},100%,50%)`);
+});
+
+// Klick på linjen
+document.getElementById('linear-bar').addEventListener('click',e=>{
+    const rect=e.target.getBoundingClientRect();
+    const percent=(e.clientX-rect.left)/rect.width;
+    const hue=Math.round(percent*360);
+    selectColor(`hsl(${hue},100%,50%)`);
+});
+</script>
+</body>
+</html>

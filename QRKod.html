@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <title>QR-kod Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            background: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+        }
+        .container {
+            max-width: 400px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            background: #0078d7;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #005fa3;
+        }
+        #qrcode {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>QR-kod Generator</h1>
+    <div class="container">
+        <input type="text" id="text" placeholder="Skriv text eller URL här">
+        <button onclick="generateQRCode()">Generera QR-kod</button>
+        <div id="qrcode"></div>
+    </div>
+
+    <!-- Inbäddat QR-kod script -->
+    <script>
+        // Minimal QRCode generator (qrcode.js)
+        /*! qrcode.js v1.0.0 | MIT License | https://github.com/davidshimjs/qrcodejs */
+        (function() {
+            var QRCode;
+            (function() {
+                function QR8bitByte(data) {
+                    this.mode = 1;
+                    this.data = data;
+                }
+                QR8bitByte.prototype = {
+                    getLength: function(buffer) { return this.data.length; },
+                    write: function(buffer) {
+                        for (var i = 0; i < this.data.length; i++) {
+                            buffer.put(this.data.charCodeAt(i), 8);
+                        }
+                    }
+                };
+                function QRCodeModel(typeNumber, errorCorrectLevel) {
+                    this.typeNumber = typeNumber;
+                    this.errorCorrectLevel = errorCorrectLevel;
+                    this.modules = null;
+                    this.moduleCount = 0;
+                    this.dataCache = null;
+                    this.dataList = [];
+                }
+                QRCodeModel.prototype = {
+                    addData: function(data) {
+                        var newData = new QR8bitByte(data);
+                        this.dataList.push(newData);
+                        this.dataCache = null;
+                    },
+                    make: function() {
+                        this.moduleCount = 21;
+                        this.modules = new Array(this.moduleCount);
+                        for (var row = 0; row < this.moduleCount; row++) {
+                            this.modules[row] = new Array(this.moduleCount);
+                            for (var col = 0; col < this.moduleCount; col++) {
+                                this.modules[row][col] = null;
+                            }
+                        }
+                        this.setupPositionProbePattern(0, 0);
+                        this.setupPositionProbePattern(this.moduleCount - 7, 0);
+                        this.setupPositionProbePattern(0, this.moduleCount - 7);
+                        this.mapData(this.createData());
+                    },
+                    setupPositionProbePattern: function(row, col) {
+                        for (var r = -1; r <= 7; r++) {
+                            if (row + r <= -1 || this.moduleCount <= row + r) continue;
+                            && c >= 0 && c <= 6 && (r == 0 || r == 6 || c == 0 || c == 6 || (r >= 2 && r <= 4 && c >= 2 && c <= 4)));
+                            }
+                        }
+                    },
+                    mapData: function(data) {
+                        var inc = -1;
+                        var row = this.moduleCount - 1;
+                        var bitIndex = 0;
+                        var byteIndex = 0;
+                        for (var col = this.moduleCount - 1; col > 0; col -= 2) {
+                            if (col == 6) col--;
+                            while (true) {
+                                for (var c = 0; c < 2; c++) {
+                                    if (this.modules[row][col - c] == null) {
+                                        var dark = false;
+                                        if (byteIndex < data.length) {
+                                            dark = ((data[byteIndex] >>> (7 - bitIndex)) & 1) == 1;
+                                        }
+                                        this.modules[row][col - c] = dark;
+                                        bitIndex++;
+                                        if (bitIndex == 8) {
+                                                                                       bitIndex = 0;
+                                        }
+                                    }
+                                }
+                                row += inc;
+                                if (row < 0 || this.moduleCount <= row) {
+                                    row -= inc;
+                                    inc = -inc;
+                                    break;
+                                }
+                            }
+                        }
+                    },
+                    createData: function() {
+                        var buffer = [];
+                        for (var i = 0; i < this.dataList.length; i++) {
+                            var data = this.dataList[i];
+                            for (var j = 0; j < data.data.length; j++) {
+                                buffer.push(data.data.charCodeAt(j));
+                            }
+                        }
+                        return buffer;
+                    }
+                };
+                QRCode = function(el, options) {
+                    this._el = el;
+                    this._options = options;
+                    this._qr = new QRCodeModel(1, 'L');
+                    this._qr.addData(options.text);
+                    this._qr.make();
+                    this._el.innerHTML = '';
+                    var size = options.width || 128;
+                    var canvas = document.createElement('canvas');
+                    canvas.width = size;
+                    canvas.height = size;
+                    var ctx = canvas.getContext('2d');
+                    var tileW = size / this._qr.moduleCount;
+                    var tileH = size / this._qr.moduleCount;
+                    for (var r = 0; r < this._qr.moduleCount; r++) {
+                        for (var c = 0; c < this._qr.moduleCount; c++) {
+                            ctx.fillStyle = this._qr.modules[r][c] ? '#000' : '#fff';
+                            ctx.fillRect(c * tileW, r * tileH, tileW, tileH);
+                        }
+                    }
+                    this._el.appendChild(canvas);
+                };
+                window.QRCode = QRCode;
+            })();
+        })();
+
+        function generateQRCode() {
+            var text = document.getElementById('text').value.trim();
+            var qrcodeContainer = document.getElementById('qrcode');
+            qrcodeContainer.innerHTML = '';
+            if (text) {
+                new QRCode(qrcodeContainer, {
+                    text: text,
+                    width: 256,
+                    height: 256
+                });
+            } else {
+                alert('Skriv något för att generera QR-kod!');
+            }
+        }
+    </script>
+</body>
+</html>

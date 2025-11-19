@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Lagspel - Flytta prickar</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .controls { margin-bottom: 20px; }
+    .board { display: flex; flex-direction: column; gap: 15px; }
+    .lane { display: flex; align-items: center; gap: 10px; }
+    .step { width: 30px; height: 30px; border: 1px solid #ccc; border-radius: 50%; display: flex; justify-content: center; align-items: center; }
+    .colored { cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>Lagspel - Flytta prickar</h1>
+<div class="controls">
+    <label>Antal lag: <input type="number" id="teams" min="1" value="3"></label>
+    <label>Antal steg: <input type="number" id="steps" min="1" value="10"></label>
+    <button id="startBtn">Starta spelet</button>
+</div>
+<div id="gameBoard" class="board"></div>
+
+<script>
+const colors = ["red", "blue", "green", "yellow", "purple", "orange", "pink", "cyan"];
+
+document.getElementById('startBtn').addEventListener('click', () => {
+    const teamCount = parseInt(document.getElementById('teams').value);
+    const stepCount = parseInt(document.getElementById('steps').value);
+    const board = document.getElementById('gameBoard');
+    board.innerHTML = ''; // Rensa tidigare spel
+
+    for (let i = 0; i < teamCount; i++) {
+        const lane = document.createElement('div');
+        lane.className = 'lane';
+        const teamColor = colors[i % colors.length];
+        let currentPos = 0;
+
+        for (let j = 0; j < stepCount; j++) {
+            const step = document.createElement('div');
+            step.className = 'step';
+            lane.appendChild(step);
+        }
+
+        const steps = lane.querySelectorAll('.step');
+        steps[currentPos].style.backgroundColor = teamColor;
+        steps[currentPos].classList.add('colored');
+
+        lane.addEventListener('click', (e) => {
+            if (e.target.classList.contains('step')) {
+                steps[currentPos].style.backgroundColor = '';
+                steps[currentPos].classList.remove('colored');
+                if (e.button === 0) { // vänsterklick
+                    if (currentPos < stepCount - 1) currentPos++;
+                }
+                steps[currentPos].style.backgroundColor = teamColor;
+                steps[currentPos].classList.add('colored');
+            }
+        });
+
+        lane.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (e.target.classList.contains('step')) {
+                steps[currentPos].style.backgroundColor = '';
+                steps[currentPos].classList.remove('colored');
+                if (currentPos > 0) currentPos--;
+                steps[currentPos].style.backgroundColor = teamColor;
+                steps[currentPos].classList.add('colored');
+            }
+        });
+
+        board.appendChild(lane);
+    }
+});
+</script>
+</body>
+</html>

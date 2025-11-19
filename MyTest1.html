@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Data Visualisering</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    #filter {
+      margin-bottom: 20px;
+    }
+    #data div {
+      margin: 5px 0;
+    }
+    input[type="number"] {
+      width: 80px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Produktförsäljning</h1>
+  <label for="filter">Filtrera kategori:</label>
+  <select id="filter">
+    <option value="Alla">Alla</option>
+    <option value="Elektronik">Elektronik</option>
+    <option value="Möbler">Möbler</option>
+  </select>
+  <canvas id="chart" width="400" height="200"></canvas>
+  <h2>Redigera värden:</h2>
+  <div id="data"></div>
+
+  <script>
+    const data = [
+      { Produkt: "Laptop", Kategori: "Elektronik", Försäljning: 1200 },
+      { Produkt: "Mobil", Kategori: "Elektronik", Försäljning: 800 },
+      { Produkt: "Stol", Kategori: "Möbler", Försäljning: 300 },
+      { Produkt: "Bord", Kategori: "Möbler", Försäljning: 450 }
+    ];
+
+    let chart;
+
+    function renderChart(filteredData) {
+      const labels = filteredData.map(d => d.Produkt);
+      const values = filteredData.map(d => d.Försäljning);
+
+      if (chart) chart.destroy();
+      chart = new Chart(document.getElementById('chart'), {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'Försäljning',
+            data: values,
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: {
+            y: {
+              beginAtZero: true
+            }
+          }
+        }
+      });
+    }
+
+    function renderTable(filteredData) {
+      const container = document.getElementById('data');
+      container.innerHTML = '';
+      filteredData.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.innerHTML = `${item.Produkt}: <input type="number" value="${item.Försäljning}" data-index="${index}" />`;
+        container.appendChild(div);
+      });
+    }
+
+    function updateData(index, value) {
+      data[index].Försäljning = parseInt(value);
+      applyFilter();
+    }
+
+    function applyFilter() {
+      const filter = document.getElementById('filter').value;
+      const filtered = filter === 'Alla' ? data : data.filter(d => d.Kategori === filter);
+      renderChart(filtered);
+      renderTable(filtered);
+    }
+
+    document.getElementById('filter').addEventListener('change', applyFilter);
+    document.getElementById('data').addEventListener('input', e => {
+      if (e.target.tagName === 'INPUT') {
+        updateData(e.target.dataset.index, e.target.value);
+      }
+    });
+
+    applyFilter();
+  </script>
+</body>
+</html>

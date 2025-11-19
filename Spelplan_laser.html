@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LASER RACE - Quantum Team Challenge</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+    
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+    
+    body {
+        font-family: 'Orbitron', monospace;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a0033 50%, #000428 100%);
+        min-height: 100vh;
+        color: #fff;
+        overflow-x: hidden;
+        position: relative;
+    }
+    
+    /* Animated background grid */
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            repeating-linear-gradient(0deg, 
+                transparent, 
+                transparent 40px, 
+                rgba(0, 255, 255, 0.03) 40px, 
+                rgba(0, 255, 255, 0.03) 41px),
+            repeating-linear-gradient(90deg, 
+                transparent, 
+                transparent 40px, 
+                rgba(255, 0, 255, 0.03) 40px, 
+                rgba(255, 0, 255, 0.03) 41px);
+        pointer-events: none;
+        animation: gridMove 20s linear infinite;
+    }
+    
+    @keyframes gridMove {
+        0% { transform: translate(0, 0); }
+        100% { transform: translate(40px, 40px); }
+    }
+    
+    /* Header */
+    h1 {
+        text-align: center;
+        font-size: clamp(2rem, 5vw, 4rem);
+        font-weight: 900;
+        margin: 30px 0;
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        position: relative;
+        background: linear-gradient(45deg, #00ffff, #ff00ff, #00ff00, #00ffff);
+        background-size: 200% 200%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: gradientShift 3s ease infinite;
+        filter: drop-shadow(0 0 30px rgba(0, 255, 255, 0.5));
+    }
+    
+    @keyframes gradientShift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+    
+    /* Control Panel */
+    .control-panel {
+        max-width: 800px;
+        margin: 0 auto 40px;
+        background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(255, 0, 255, 0.1));
+        border: 2px solid;
+        border-image: linear-gradient(45deg, #00ffff, #ff00ff) 1;
+        border-radius: 20px;
+        padding: 30px;
+        backdrop-filter: blur(10px);
+        box-shadow: 
+            0 0 50px rgba(0, 255, 255, 0.3),
+            inset 0 0 30px rgba(255, 0, 255, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .control-panel::before {
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(45deg, #00ffff, #ff00ff, #00ff00, #ffff00);
+        border-radius: 20px;
+        opacity: 0;
+        z-index: -1;
+        animation: borderGlow 3s ease infinite;
+    }
+    
+    @keyframes borderGlow {
+        0%, 100% { opacity: 0; }
+        50% { opacity: 0.5; }
+    }
+    
+    .controls {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    label {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 2px;
+        color: #00ffff;
+        text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+    }
+    
+    input[type="number"] {
+        background: rgba(0, 0, 0, 0.5);
+        border: 2px solid #00ffff;
+        color: #fff;
+        padding: 10px 15px;
+        border-radius: 10px;
+        font-family: 'Orbitron', monospace;
+        font-size: 16px;
+        width: 120px;
+        transition: all 0.3s;
+    }
+    
+    input[type="number"]:focus {
+        outline: none;
+        box-shadow: 0 0 20px rgba(0, 255, 255, 0.8);
+        border-color: #ff00ff;
+        transform: scale(1.05);
+    }
+    
+    #startBtn {
+        background: linear-gradient(45deg, #00ffff, #ff00ff);
+        border: none;
+        color: #000;
+        padding: 15px 40px;
+        border-radius: 50px;
+        font-family: 'Orbitron', monospace;
+        font-size: 18px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s;
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
+    }
+    
+    #startBtn::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.5);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+    
+    #startBtn:hover {
+        transform: scale(1.1);
+        box-shadow: 
+            0 0 50px rgba(255, 0, 255, 0.8),
+            0 0 100px rgba(0, 255, 255, 0.5);
+    }
+    
+    #startBtn:hover::before {
+        width: 300px;
+        height: 300px;
+    }
+    
+    /* Game Board */
+    #gameBoard {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        gap: 30px;
+    }
+    
+    .lane {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 20px;
+        background: linear-gradient(90deg, 
+            rgba(0, 0, 0, 0.3) 0%, 
+            rgba(0, 255, 255, 0.05) 50%, 
+            rgba(0, 0, 0, 0.3) 100%);
+        border-radius: 100px;
+        position: relative;
+        transition: all 0.3s;
+    }
+    
+    .lane:hover {
+        transform: translateX(10px);
+        box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+    }
+    
+    .lane::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, 
+            transparent, 
+            rgba(0, 255, 255, 0.3), 
+            transparent);
+        transform: translateY(-50%);
+        z-index: -1;
+    }
+    
+    .step {
+        width: 50px;
+        height: 50px;
+        border: 2px solid rgba(0, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        background: radial-gradient(circle, 
+            rgba(0, 0, 0, 0.5), 
+            rgba(0, 20, 40, 0.3));
+        transition: all 0.3s;
+    }
+    
+    .step::before {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background: radial-gradient(circle, 
+            transparent 30%, 
+            rgba(0, 255, 255, 0.1) 70%);
+        animation: pulse 2s infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.2); opacity: 0; }
+    }
+    
+    .step.colored {
+        cursor: pointer;
+        animation: laserGlow 1s ease infinite alternate;
+    }
+    
+    @keyframes laserGlow {
+        0% { 
+            box-shadow: 
+                0 0 20px currentColor,
+                inset 0 0 20px currentColor;
+            transform: scale(1);
+        }
+        100% { 
+            box-shadow: 
+                0 0 40px currentColor,
+                inset 0 0 30px currentColor,
+                0 0 60px currentColor;
+            transform: scale(1.1);
+        }
+    }
+    
+    .step.colored::after {
+        content: '';
+        position: absolute;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background: radial-gradient(circle, 
+            rgba(255, 255, 255, 0.9), 
+            currentColor);
+        animation: corePulse 0.5s ease infinite alternate;
+    }
+    
+    @keyframes corePulse {
+        0% { transform: scale(0.8); }
+        100% { transform: scale(1.2); }
+    }
+    
+    /* Team color laser effects */
+    .laser-trail {
+        position: absolute;
+        height: 4px;
+        background: linear-gradient(90deg, 
+            transparent, 
+            currentColor, 
+            transparent);
+        opacity: 0;
+        animation: laserShoot 0.5s ease;
+        pointer-events: none;
+        filter: blur(1px);
+        z-index: 10;
+    }
+    
+    @keyframes laserShoot {
+        0% {
+            opacity: 0;
+            transform: scaleX(0);
+        }
+        50% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 0;
+            transform: scaleX(1);
+        }
+    }
+    
+    /* Victory effect */
+    .winner {
+        animation: victoryPulse 1s ease infinite;
+    }
+    
+    @keyframes victoryPulse {
+        0%, 100% {
+            transform: scale(1);
+            filter: brightness(1);
+        }
+        50% {
+            transform: scale(1.05);
+            filter: brightness(1.5) drop-shadow(0 0 50px currentColor);
+        }
+    }
+    
+    /* Stats display */
+    .stats {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(0, 0, 0, 0.8);
+        border: 1px solid #00ffff;
+        border-radius: 10px;
+        padding: 15px;
+        min-width: 150px;
+        backdrop-filter: blur(10px);
+        display: none;
+    }
+    
+    .stats.active {
+        display: block;
+    }
+    
+    .stat-item {
+        margin: 10px 0;
+        font-size: 12px;
+        color: #00ffff;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .controls {
+            flex-direction: column;
+        }
+        
+        .step {
+            width: 35px;
+            height: 35px;
+        }
+        
+        .lane {
+            gap: 10px;
+            padding: 15px;
+        }
+    }
+    
+    /* Particle effects */
+    .particle {
+        position: fixed;
+        pointer-events: none;
+        opacity: 0;
+        animation: float 4s linear;
+    }
+    
+    @keyframes float {
+        0% {
+            opacity: 0;
+            transform: translateY(100vh) scale(0);
+        }
+        10% {
+            opacity: 1;
+        }
+        90% {
+            opacity: 1;
+        }
+        100% {
+            opacity: 0;
+            transform: translateY(-100vh) scale(1);
+        }
+    }
+</style>
+</head>
+<body>
+<h1>LASER RACE</h1>
+<div class="control-panel">
+    <div class="controls">
+        <div class="control-group">
+            <label>Antal lag</label>
+            <input type="number" id="teams" min="1" max="8" value="3">
+        </div>
+        <div class="control-group">
+            <label>Antal steg</label>
+            <input type="number" id="steps" min="5" max="20" value="10">
+        </div>
+        <button id="startBtn">Initiera Spel</button>
+    </div>
+</div>
+<div id="gameBoard"></div>
+
+<div class="stats" id="stats">
+    <div class="stat-item">Spel aktivt</div>
+    <div id="teamStats"></div>
+</div>
+
+<script>
+// Futuristic neon colors
+const laserColors = [
+    { name: 'Cyan Laser', color: '#00ffff', glow: '#00ffff' },
+    { name: 'Magenta Pulse', color: '#ff00ff', glow: '#ff00ff' },
+    { name: 'Lime Beam', color: '#00ff00', glow: '#00ff00' },
+    { name: 'Solar Flare', color: '#ffaa00', glow: '#ff6600' },
+    { name: 'Ultra Violet', color: '#9400d3', glow: '#9400d3' },
+    { name: 'Ruby Ray', color: '#ff0040', glow: '#ff0040' },
+    { name: 'Electric Blue', color: '#0080ff', glow: '#0080ff' },
+    { name: 'Plasma Pink', color: '#ff69b4', glow: '#ff69b4' }
+];
+
+let gameActive = false;
+let teams = [];
+
+// Particle effect generator
+function createParticle() {
+    const particle = document.createElement('div');
+    particle.className = 'particle';
+    particle.style.left = Math.random() * window.innerWidth + 'px';
+    particle.style.width = particle.style.height = Math.random() * 4 + 2 + 'px';
+    particle.style.background = laserColors[Math.floor(Math.random() * laserColors.length)].color;
+    particle.style.borderRadius = '50%';
+    particle.style.boxShadow = `0 0 10px ${particle.style.background}`;
+    document.body.appendChild(particle);
+    
+    setTimeout(() => particle.remove(), 4000);
+}
+
+// Create particles periodically
+setInterval(createParticle, 300);
+
+// Laser trail effect
+function createLaserTrail(lane, startPos, endPos, color) {
+    const trail = document.createElement('div');
+    trail.className = 'laser-trail';
+    trail.style.color = color;
+    
+    const steps = lane.querySelectorAll('.step');
+    const startStep = steps[startPos];
+    const endStep = steps[endPos];
+    
+    const startRect = startStep.getBoundingClientRect();
+    const endRect = endStep.getBoundingClientRect();
+    const laneRect = lane.getBoundingClientRect();
+    
+    trail.style.left = (startRect.left - laneRect.left + startRect.width/2) + 'px';
+    trail.style.top = '50%';
+    trail.style.width = Math.abs(endRect.left - startRect.left) + 'px';
+    trail.style.transform = 'translateY(-50%)';
+    
+    lane.appendChild(trail);
+    setTimeout(() => trail.remove(), 500);
+}
+
+document.getElementById('startBtn').addEventListener('click', () => {
+    const teamCount = parseInt(document.getElementById('teams').value);
+    const stepCount = parseInt(document.getElementById('steps').value);
+    const board = document.getElementById('gameBoard');
+    const statsPanel = document.getElementById('stats');
+    
+    // Clear and reset
+    board.innerHTML = '';
+    teams = [];
+    gameActive = true;
+    statsPanel.classList.add('active');
+    
+    // Create sound effect (visual feedback since we can't play actual sound)
+    document.body.style.animation = 'none';
+    setTimeout(() => {
+        document.body.style.animation = 'gridMove 20s linear infinite';
+    }, 10);
+    
+    // Initialize teams
+    for (let i = 0; i < teamCount; i++) {
+        const lane = document.createElement('div');
+        lane.className = 'lane';
+        const teamColor = laserColors[i % laserColors.length];
+        let currentPos = 0;
+        
+        // Create team object
+        const team = {
+            id: i,
+            name: `Lag ${i + 1}`,
+            color: teamColor.color,
+            position: 0,
+            lane: lane
+        };
+        teams.push(team);
+        
+        // Create steps
+        for (let j = 0; j < stepCount; j++) {
+            const step = document.createElement('div');
+            step.className = 'step';
+            step.dataset.position = j;
+            lane.appendChild(step);
+        }
+        
+        const steps = lane.querySelectorAll('.step');
+        steps[currentPos].style.backgroundColor = teamColor.color;
+        steps[currentPos].style.borderColor = teamColor.color;
+        steps[currentPos].classList.add('colored');
+        
+        // Click handlers with laser effects
+        lane.addEventListener('click', (e) => {
+            if (e.target.classList.contains('step') && gameActive) {
+                const oldPos = currentPos;
+                
+                steps[currentPos].style.backgroundColor = '';
+                steps[currentPos].style.borderColor = 'rgba(0, 255, 255, 0.2)';
+                steps[currentPos].classList.remove('colored');
+                
+                if (e.button === 0 && currentPos < stepCount - 1) {
+                    currentPos++;
+                    createLaserTrail(lane, oldPos, currentPos, teamColor.color);
+                    team.position = currentPos;
+                    
+                    // Check for victory
+                    if (currentPos === stepCount - 1) {
+                        lane.classList.add('winner');
+                        gameActive = false;
+                        showVictory(team);
+                    }
+                }
+                
+                steps[currentPos].style.backgroundColor = teamColor.color;
+                steps[currentPos].style.borderColor = teamColor.color;
+                steps[currentPos].classList.add('colored');
+                
+                updateStats();
+            }
+        });
+        
+        // Right click for backward movement
+        lane.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            if (e.target.classList.contains('step') && gameActive) {
+                const oldPos = currentPos;
+                
+                steps[currentPos].style.backgroundColor = '';
+                steps[currentPos].style.borderColor = 'rgba(0, 255, 255, 0.2)';
+                steps[currentPos].classList.remove('colored');
+                
+                if (currentPos > 0) {
+                    currentPos--;
+                    createLaserTrail(lane, oldPos, currentPos, teamColor.color);
+                    team.position = currentPos;
+                }
+                
+                steps[currentPos].style.backgroundColor = teamColor.color;
+                steps[currentPos].style.borderColor = teamColor.color;
+                steps[currentPos].classList.add('colored');
+                
+                updateStats();
+            }
+        });
+        
+        board.appendChild(lane);
+    }
+    
+    updateStats();
+});
+
+function updateStats() {
+    const statsDiv = document.getElementById('teamStats');
+    statsDiv.innerHTML = teams
+        .map(t => `<div class="stat-item" style="color: ${t.color}">${t.name}: ${t.position + 1}</div>`)
+        .join('');
+}
+
+function showVictory(winner) {
+    const message = document.createElement('div');
+    message.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 3rem;
+        font-weight: 900;
+        color: ${winner.color};
+        text-transform: uppercase;
+        letter-spacing: 5px;
+        animation: victoryPulse 1s ease infinite;
+        z-index: 1000;
+        text-shadow: 
+            0 0 30px ${winner.color},
+            0 0 60px ${winner.color},
+            0 0 90px ${winner.color};
+    `;
+    message.textContent = `${winner.name} Vinner!`;
+    document.body.appendChild(message);
+    
+    // Create victory particles
+    for (let i = 0; i < 50; i++) {
+        setTimeout(() => {
+            const particle = document.createElement('div');
+            particle.className = 'particle';
+            particle.style.left = (window.innerWidth / 2 + (Math.random() - 0.5) * 200) + 'px';
+            particle.style.width = particle.style.height = Math.random() * 8 + 4 + 'px';
+            particle.style.background = winner.color;
+            particle.style.borderRadius = '50%';
+            particle.style.boxShadow = `0 0 20px ${winner.color}`;
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), 4000);
+        }, i * 50);
+    }
+}
+</script>
+</body>
+</html>

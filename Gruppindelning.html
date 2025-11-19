@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<title>Workshop Gruppverktyg</title>
+<style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { color: #333; }
+    .input-section { margin-bottom: 20px; }
+    textarea { width: 100%; height: 150px; }
+    .group-container { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 20px; }
+    .group-box { border: 2px solid #444; border-radius: 8px; padding: 10px; width: 250px; background: #f9f9f9; }
+    .group-box h3 { margin: 0 0 10px; text-align: center; }
+    .person { padding: 5px; margin: 3px 0; border-radius: 4px; color: #333; cursor: grab; }
+    .person.dragging { opacity: 0.5; }
+    .group-box.drag-over { background: #e0ffe0; }
+    button { margin-right: 10px; padding: 8px 12px; }
+</style>
+</head>
+<body>
+<h1>Workshop Gruppverktyg</h1>
+
+<div class="input-section">
+    <h3>Klistra in namn och företag (format: Namn,Företag per rad):</h3>
+    <textarea id="inputData" placeholder="Exempel:\nAnna, Företag A\nBjörn, Företag B"></textarea>
+    <br><br>
+    <input type="file" id="fileInput" accept=".xlsx,.xls" />
+    <br><br>
+    <label>Antal grupper: <input type="number" id="numGroups" min="1"></label>
+    <label>eller Antal personer per grupp: <input type="number" id="groupSize" min="1"></label>
+    <br><br>
+    <button onclick="generateGroups()">Skapa grupper</button>
+    <button onclick="downloadPDF()">PDF (alla grupper som tabell)</button>
+    <button onclick="downloadPDFSingle()">PDF (en grupp per sida)</button>
+</div>
+
+<div id="suggestions" style="color:#d9534f; font-weight:bold;"></div>
+<div class="group-container" id="groupContainer"></div>
+
+<!-- Rätt script-taggar -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+let participants = [];
+let groups = [];
+const colors = ["#e6f7ff","#fff0f6","#f9f0ff","#f0f5ff","#f6ffed","#fffbe6","#e6fffb","#f0fff0","#fdf5e6","#f5f5f5"];
+
+document.getElementById('fileInput').addEventListener('change', handleFile);
+
+function handleFile(e) {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const data = new Uint8Array(evt.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+        participants = rows.slice(1).map(r => ({ name: r[0], company: r[1] }));
+        alert("Excel-fil laddad med " + participants.length + " deltagare.");
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+function parseInput() {
+    const text = document.getElementById('inputData').value.trim();
+    if (text) {
+        participants = text.split('\n').map(line => {
+            const [name, company] = line.split(',').map(s => s.trim());
+            return { name, company };
+        });
+    }
+}
+
+function generateGroups() {
+    parseInput();
+    if (participants.length === 0) {
+        alert("Ingen data angiven.");
+        return;
+    }
+
+    const numGroups = parseInt(document.getElementById('numGroups').value);
+    const groupSize = parseInt(document.getElementById('groupSize').value);
+
+    let groupsCount = numGroups || Math.ceil(participants.length / groupSize);
+
+    // Företagsbalanserad fördelning
+    const companyMap = {};
+    participants.forEach(p => {
+        if (!companyMap[p.company]) companyMap[p.company] = [];
+        companyMap[p.company].push(p);
+    });
+
+    groups = Array.from({ length: groupsCount }, () => []);
+    let i = 0;
+    for (const comp in companyMap) {
+        for (const person of companyMap[comp]) {
+            groups[i % groupsCount].push(person);
+            i++;
+        }
+    }
+
+    renderGroups();
+    showSuggestions(groupsCount);
+}
+
+function renderGroups() {
+    const container = document.getElementById('groupContainer');
+    container.innerHTML = '';
+    groups.forEach((group, idx) => {
+        const div = document.createElement('div');
+        div.className = 'group-box';
+        div.dataset.index = idx;
+        div.innerHTML = `<h3>Grupp ${idx + 1}</h3>`;
+        group.forEach((p, pIdx) => {
+            const colorIndex = Object.keys(groups).indexOf(p.company) % colors.length;
+            const personDiv = document.createElement('div');
+            personDiv.className = 'person';
+            personDiv.style.background = colors[colorIndex];
+            personDiv.textContent = `${p.name} (${p.company})`;
+            personDiv.draggable = true;
+            personDiv.dataset.group = idx;
+            personDiv.dataset.index = pIdx;
+            addDragEvents(personDiv);
+            div.appendChild(personDiv);
+        });
+        addGroupDragEvents(div);
+        container.appendChild(div);
+    });
+}
+
+function addDragEvents(el) {
+    el.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', JSON.stringify({ group: el.dataset.group, index: el.dataset.index }));
+        el.classList.add('dragging');
+    });
+    el.addEventListener('dragend', e => el.classList.remove('dragging'));
+}
+
+function addGroupDragEvents(groupBox) {
+    groupBox.addEventListener('dragover', e => {
+        e.preventDefault();
+        groupBox.classList.add('drag-over');
+    });
+    groupBox.addEventListener('dragleave', () => groupBox.classList.remove('drag-over'));
+    groupBox.addEventListener('drop', e => {
+        e.preventDefault();
+        groupBox.classList.remove('drag-over');
+        const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+        const fromGroup = parseInt(data.group);
+        const fromIndex = parseInt(data.index);
+        const toGroup = parseInt(groupBox.dataset.index);
+
+        if (fromGroup === toGroup) return;
+
+        const person = groups[fromGroup].splice(fromIndex, 1)[0];
+        groups[toGroup].push(person);
+
+        // Flytta tillbaka en person för balans
+        if (groups[toGroup].length > groups[fromGroup].length + 1) {
+            const swapPerson = groups[toGroup].splice(0, 1)[0];
+            groups[fromGroup].push(swapPerson);
+        }
+
+        renderGroups();
+    });
+}
+
+function showSuggestions(groupsCount) {
+    const total = participants.length;
+    const remainder = total % groupsCount;
+    const suggestionDiv = document.getElementById('suggestions');
+    if (remainder !== 0) {
+        suggestionDiv.innerHTML = `Ojämn fördelning: ${remainder} person(er) över. Förslag: 
+        • Öka antal grupper till ${groupsCount + 1} 
+        • Eller ändra gruppstorlek till ${Math.ceil(total / (groupsCount + 1))}`;
+    } else {
+        suggestionDiv.innerHTML = '';
+    }
+}
+
+async function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Workshop Grupper - Avcheckning", 10, 15);
+
+    let y = 30;
+    groups.forEach((group, idx) => {
+        doc.setFontSize(14);
+        doc.text(`Grupp ${idx + 1}`, 10, y);
+        y += 8;
+        doc.setFontSize(12);
+        group.forEach(p => {
+            doc.text("[ ] " + p.name + " (" + p.company + ")", 15, y);
+            y += 6;
+            if (y > 270) { doc.addPage(); y = 20; }
+        });
+        y += 10;
+    });
+
+    doc.save("grupper_avcheckning.pdf");
+}
+
+async function downloadPDFSingle() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    groups.forEach((group, idx) => {
+        if (idx > 0) doc.addPage();
+        doc.setFontSize(22);
+        doc.text(`Grupp ${idx + 1}`, 10, 20);
+        doc.setFontSize(14);
+        let y = 40;
+        group.forEach(p => {
+            doc.text("• " + p.name + " (" + p.company + ")", 20, y);
+            y += 10;
+        });
+    });
+    doc.save("grupper_per_sida.pdf");
+}
+</script>
+</body>
+</html>
