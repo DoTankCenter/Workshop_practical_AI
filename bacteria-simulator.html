@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bakterietillväxt Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .panel h2 {
+            margin-top: 0;
+            color: #2c3e50;
+            font-size: 16px;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 13px;
+        }
+
+        .control-group input,
+        .control-group select {
+            width: 100%;
+            padding: 8px 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .control-group input:focus,
+        .control-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .slider-container input[type="range"] {
+            flex: 1;
+        }
+
+        .slider-value {
+            min-width: 50px;
+            text-align: right;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .unit {
+            font-size: 11px;
+            color: #7f8c8d;
+            margin-top: 2px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            flex: 1;
+            padding: 10px 15px;
+            font-size: 13px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            min-width: 70px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .start-btn { background: #27ae60; color: white; }
+        .stop-btn { background: #e74c3c; color: white; }
+        .reset-btn { background: #95a5a6; color: white; }
+        .save-btn { background: #9b59b6; color: white; }
+        .load-btn { background: #f39c12; color: white; }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .top-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .petri-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .petri-dish {
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #f5f5dc 0%, #e8e4c9 100%);
+            border: 8px solid #bdc3c7;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.1), 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .bacteria-dot {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .stats-display {
+            margin-top: 15px;
+            text-align: center;
+        }
+
+        .stat-item {
+            display: inline-block;
+            margin: 0 10px;
+            padding: 8px 15px;
+            background: #ecf0f1;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: #7f8c8d;
+        }
+
+        .stat-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        .chart-container {
+            height: 200px;
+        }
+
+        .charts-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .bacteria-info {
+            background: #ecf0f1;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 12px;
+        }
+
+        .bacteria-info strong {
+            color: #2c3e50;
+        }
+
+        .bacteria-info p {
+            margin: 5px 0;
+            color: #7f8c8d;
+        }
+
+        .growth-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: #ecf0f1;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .growth-indicator .label {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+
+        .growth-indicator .value {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .growth-indicator .value.good { color: #27ae60; }
+        .growth-indicator .value.medium { color: #f39c12; }
+        .growth-indicator .value.bad { color: #e74c3c; }
+
+        .time-display {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .phase-indicator {
+            text-align: center;
+            padding: 5px 10px;
+            background: #3498db;
+            color: white;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 1200px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+
+            .top-row {
+                grid-template-columns: 1fr;
+            }
+
+            .charts-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Bakterietillväxt Simulator</h1>
+
+    <div class="container">
+        <div class="panel">
+            <h2>Bakterie & Inställningar</h2>
+
+            <div class="control-group">
+                <label for="bacteriaSelect">Välj bakterie</label>
+                <select id="bacteriaSelect" onchange="selectBacteria()">
+                    <option value="ecoli">Escherichia coli (E. coli)</option>
+                    <option value="salmonella">Salmonella enterica</option>
+                    <option value="staph">Staphylococcus aureus</option>
+                    <option value="bacillus">Bacillus subtilis</option>
+                    <option value="lactobacillus">Lactobacillus acidophilus</option>
+                    <option value="pseudomonas">Pseudomonas aeruginosa</option>
+                    <option value="custom">Anpassad</option>
+                </select>
+            </div>
+
+            <div class="bacteria-info" id="bacteriaInfo">
+                <strong>E. coli</strong>
+                <p>Optimal temp: 37°C | pH: 6.0-8.0</p>
+                <p>Generationstid: ~20 min</p>
+            </div>
+
+            <div class="control-group">
+                <label for="initialPopulation">Startpopulation</label>
+                <input type="number" id="initialPopulation" value="100" min="1" max="10000">
+                <div class="unit">antal bakterier</div>
+            </div>
+
+            <div class="control-group">
+                <label for="growthConstant">Tillväxtkonstant (k)</label>
+                <input type="number" id="growthConstant" value="0.035" min="0.001" max="0.2" step="0.001">
+                <div class="unit">per minut (högre = snabbare)</div>
+            </div>
+
+            <div class="control-group">
+                <label for="carryingCapacity">Bärförmåga (K)</label>
+                <input type="number" id="carryingCapacity" value="1000000" min="1000" max="100000000" step="1000">
+                <div class="unit">max antal bakterier</div>
+            </div>
+
+            <h2>Miljöfaktorer</h2>
+
+            <div class="control-group">
+                <label>Temperatur: <span id="tempValue">37</span>°C</label>
+                <div class="slider-container">
+                    <input type="range" id="temperature" min="0" max="60" value="37" oninput="updateSliderDisplay()">
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>pH: <span id="phValue">7.0</span></label>
+                <div class="slider-container">
+                    <input type="range" id="ph" min="0" max="14" value="7" step="0.1" oninput="updateSliderDisplay()">
+                </div>
+            </div>
+
+            <div class="growth-indicator">
+                <span class="label">Tillväxteffektivitet:</span>
+                <span class="value" id="growthEfficiency">100%</span>
+            </div>
+
+            <div class="buttons">
+                <button class="start-btn" id="startBtn" onclick="startSimulation()">Start</button>
+                <button class="stop-btn" onclick="stopSimulation()">Stopp</button>
+                <button class="reset-btn" onclick="resetSimulation()">Reset</button>
+            </div>
+
+            <div class="buttons">
+                <button class="save-btn" onclick="saveSimulation()">Spara</button>
+                <button class="load-btn" onclick="document.getElementById('fileInput').click()">Ladda</button>
+            </div>
+            <input type="file" id="fileInput" accept=".json" onchange="loadSimulation(event)">
+        </div>
+
+        <div class="main-content">
+            <div class="top-row">
+                <div class="panel petri-container">
+                    <h2>Petriskål</h2>
+                    <div class="time-display">Tid: <span id="timeDisplay">0:00</span></div>
+                    <div class="petri-dish" id="petriDish"></div>
+                    <div class="stats-display">
+                        <div class="stat-item">
+                            <div class="stat-label">Population</div>
+                            <div class="stat-value" id="populationDisplay">100</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Generation</div>
+                            <div class="stat-value" id="generationDisplay">0</div>
+                        </div>
+                    </div>
+                    <div class="phase-indicator" id="phaseIndicator">Lag-fas</div>
+                </div>
+
+                <div class="panel">
+                    <h2>Tillväxtkurva</h2>
+                    <div class="chart-container">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="charts-row">
+                <div class="panel">
+                    <h2>Temperatur över tid</h2>
+                    <div class="chart-container">
+                        <canvas id="tempChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="panel">
+                    <h2>pH över tid</h2>
+                    <div class="chart-container">
+                        <canvas id="phChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Bacteria database
+        const bacteriaDB = {
+            ecoli: {
+                name: "E. coli",
+                fullName: "Escherichia coli",
+                optimalTemp: 37,
+                tempRange: [20, 45],
+                optimalPh: 7,
+                phRange: [6, 8],
+                growthConstant: 0.035,
+                generationTime: 20,
+                color: '#e74c3c',
+                description: "Vanlig tarmbakterie, snabb tillväxt"
+            },
+            salmonella: {
+                name: "Salmonella",
+                fullName: "Salmonella enterica",
+                optimalTemp: 37,
+                tempRange: [7, 45],
+                optimalPh: 7,
+                phRange: [4, 9],
+                growthConstant: 0.028,
+                generationTime: 25,
+                color: '#9b59b6',
+                description: "Matförgiftningsbakterie"
+            },
+            staph: {
+                name: "S. aureus",
+                fullName: "Staphylococcus aureus",
+                optimalTemp: 37,
+                tempRange: [7, 48],
+                optimalPh: 7.5,
+                phRange: [4.5, 9.3],
+                growthConstant: 0.023,
+                generationTime: 30,
+                color: '#f1c40f',
+                description: "Hudbakterie, kan orsaka infektioner"
+            },
+            bacillus: {
+                name: "B. subtilis",
+                fullName: "Bacillus subtilis",
+                optimalTemp: 37,
+                tempRange: [15, 55],
+                optimalPh: 7,
+                phRange: [5.5, 8.5],
+                growthConstant: 0.026,
+                generationTime: 27,
+                color: '#2ecc71',
+                description: "Jordbakterie, bildar sporer"
+            },
+            lactobacillus: {
+                name: "L. acidophilus",
+                fullName: "Lactobacillus acidophilus",
+                optimalTemp: 37,
+                tempRange: [20, 45],
+                optimalPh: 5.5,
+                phRange: [4, 7],
+                growthConstant: 0.017,
+                generationTime: 40,
+                color: '#3498db',
+                description: "Probiotisk bakterie, mjölksyraproducent"
+            },
+            pseudomonas: {
+                name: "P. aeruginosa",
+                fullName: "Pseudomonas aeruginosa",
+                optimalTemp: 37,
+                tempRange: [4, 42],
+                optimalPh: 7.2,
+                phRange: [5, 9],
+                growthConstant: 0.031,
+                generationTime: 22,
+                color: '#1abc9c',
+                description: "Opportunistisk patogen, antibiotikaresistent"
+            },
+            custom: {
+                name: "Anpassad",
+                fullName: "Anpassad bakterie",
+                optimalTemp: 37,
+                tempRange: [10, 50],
+                optimalPh: 7,
+                phRange: [4, 10],
+                growthConstant: 0.03,
+                generationTime: 23,
+                color: '#95a5a6',
+                description: "Användardefinierade parametrar"
+            }
+        };
+
+        // Simulation state
+        let isRunning = false;
+        let simulationInterval = null;
+        let currentPopulation = 100;
+        let elapsedMinutes = 0;
+        let bacteriaDots = [];
+        let selectedBacteria = 'ecoli';
+
+        // Data arrays for charts
+        let timeData = [0];
+        let populationData = [100];
+        let tempData = [37];
+        let phData = [7];
+
+        // Initialize charts
+        const growthChart = new Chart(document.getElementById('growthChart'), {
+            type: 'line',
+            data: {
+                labels: timeData,
+                datasets: [{
+                    label: 'Population',
+                    data: populationData,
+                    borderColor: '#e74c3c',
+                    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Tid (min)' }
+                    },
+                    y: {
+                        title: { display: true, text: 'Population' },
+                        beginAtZero: true
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        const tempChart = new Chart(document.getElementById('tempChart'), {
+            type: 'line',
+            data: {
+                labels: timeData,
+                datasets: [{
+                    label: 'Temperatur',
+                    data: tempData,
+                    borderColor: '#e67e22',
+                    backgroundColor: 'rgba(230, 126, 34, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Tid (min)' }
+                    },
+                    y: {
+                        title: { display: true, text: '°C' },
+                        min: 0,
+                        max: 60
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        const phChart = new Chart(document.getElementById('phChart'), {
+            type: 'line',
+            data: {
+                labels: timeData,
+                datasets: [{
+                    label: 'pH',
+                    data: phData,
+                    borderColor: '#9b59b6',
+                    backgroundColor: 'rgba(155, 89, 182, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        title: { display: true, text: 'Tid (min)' }
+                    },
+                    y: {
+                        title: { display: true, text: 'pH' },
+                        min: 0,
+                        max: 14
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        function selectBacteria() {
+            selectedBacteria = document.getElementById('bacteriaSelect').value;
+            const bacteria = bacteriaDB[selectedBacteria];
+
+            // Update info display
+            document.getElementById('bacteriaInfo').innerHTML = `
+                <strong>${bacteria.fullName}</strong>
+                <p>Optimal temp: ${bacteria.optimalTemp}°C | pH: ${bacteria.phRange[0]}-${bacteria.phRange[1]}</p>
+                <p>Generationstid: ~${bacteria.generationTime} min</p>
+                <p>${bacteria.description}</p>
+            `;
+
+            // Update growth constant
+            if (selectedBacteria !== 'custom') {
+                document.getElementById('growthConstant').value = bacteria.growthConstant;
+                document.getElementById('temperature').value = bacteria.optimalTemp;
+                document.getElementById('ph').value = bacteria.optimalPh;
+                updateSliderDisplay();
+            }
+
+            // Update chart color
+            growthChart.data.datasets[0].borderColor = bacteria.color;
+            growthChart.data.datasets[0].backgroundColor = bacteria.color + '20';
+            growthChart.update();
+
+            updateGrowthEfficiency();
+        }
+
+        function updateSliderDisplay() {
+            document.getElementById('tempValue').textContent = document.getElementById('temperature').value;
+            document.getElementById('phValue').textContent = parseFloat(document.getElementById('ph').value).toFixed(1);
+            updateGrowthEfficiency();
+        }
+
+        function calculateGrowthEfficiency() {
+            const bacteria = bacteriaDB[selectedBacteria];
+            const temp = parseFloat(document.getElementById('temperature').value);
+            const ph = parseFloat(document.getElementById('ph').value);
+
+            // Temperature factor
+            let tempFactor = 1;
+            if (temp < bacteria.tempRange[0] || temp > bacteria.tempRange[1]) {
+                tempFactor = 0;
+            } else {
+                const tempDiff = Math.abs(temp - bacteria.optimalTemp);
+                tempFactor = Math.max(0, 1 - (tempDiff / 20));
+            }
+
+            // pH factor
+            let phFactor = 1;
+            if (ph < bacteria.phRange[0] || ph > bacteria.phRange[1]) {
+                phFactor = 0;
+            } else {
+                const phDiff = Math.abs(ph - bacteria.optimalPh);
+                phFactor = Math.max(0, 1 - (phDiff / 4));
+            }
+
+            return tempFactor * phFactor;
+        }
+
+        function updateGrowthEfficiency() {
+            const efficiency = calculateGrowthEfficiency();
+            const percentage = Math.round(efficiency * 100);
+            const element = document.getElementById('growthEfficiency');
+            element.textContent = percentage + '%';
+
+            element.className = 'value';
+            if (percentage >= 70) {
+                element.classList.add('good');
+            } else if (percentage >= 30) {
+                element.classList.add('medium');
+            } else {
+                element.classList.add('bad');
+            }
+        }
+
+        function updatePetriDish() {
+            const petriDish = document.getElementById('petriDish');
+            const capacity = parseFloat(document.getElementById('carryingCapacity').value);
+            const bacteria = bacteriaDB[selectedBacteria];
+
+            // Calculate number of dots to display (logarithmic scale)
+            const maxDots = 500;
+            const ratio = currentPopulation / capacity;
+            const numDots = Math.min(maxDots, Math.floor(Math.log10(currentPopulation + 1) * 50));
+
+            // Remove excess dots
+            while (bacteriaDots.length > numDots) {
+                const dot = bacteriaDots.pop();
+                dot.remove();
+            }
+
+            // Add new dots
+            while (bacteriaDots.length < numDots) {
+                const dot = document.createElement('div');
+                dot.className = 'bacteria-dot';
+
+                // Random position within circle
+                const angle = Math.random() * Math.PI * 2;
+                const radius = Math.random() * 110;
+                const x = 125 + radius * Math.cos(angle);
+                const y = 125 + radius * Math.sin(angle);
+
+                const size = 2 + Math.random() * 3;
+                dot.style.width = size + 'px';
+                dot.style.height = size + 'px';
+                dot.style.left = x + 'px';
+                dot.style.top = y + 'px';
+                dot.style.background = bacteria.color;
+                dot.style.opacity = 0.6 + Math.random() * 0.4;
+
+                petriDish.appendChild(dot);
+                bacteriaDots.push(dot);
+            }
+        }
+
+        function updatePhase() {
+            const capacity = parseFloat(document.getElementById('carryingCapacity').value);
+            const ratio = currentPopulation / capacity;
+            const phaseElement = document.getElementById('phaseIndicator');
+
+            if (elapsedMinutes < 5) {
+                phaseElement.textContent = 'Lag-fas (anpassning)';
+                phaseElement.style.background = '#3498db';
+            } else if (ratio < 0.3) {
+                phaseElement.textContent = 'Log-fas (exponentiell tillväxt)';
+                phaseElement.style.background = '#27ae60';
+            } else if (ratio < 0.8) {
+                phaseElement.textContent = 'Decelererad fas';
+                phaseElement.style.background = '#f39c12';
+            } else {
+                phaseElement.textContent = 'Stationär fas';
+                phaseElement.style.background = '#e74c3c';
+            }
+        }
+
+        function startSimulation() {
+            if (isRunning) return;
+
+            isRunning = true;
+            document.getElementById('startBtn').disabled = true;
+
+            if (elapsedMinutes === 0) {
+                currentPopulation = parseFloat(document.getElementById('initialPopulation').value);
+            }
+
+            simulationInterval = setInterval(() => {
+                const k = parseFloat(document.getElementById('growthConstant').value);
+                const capacity = parseFloat(document.getElementById('carryingCapacity').value);
+                const efficiency = calculateGrowthEfficiency();
+
+                // Logistic growth with lag phase consideration
+                let lagFactor = elapsedMinutes < 5 ? elapsedMinutes / 5 : 1;
+
+                // dN/dt = k * N * (1 - N/K) * efficiency * lagFactor
+                const growthRate = k * currentPopulation * (1 - currentPopulation / capacity) * efficiency * lagFactor;
+                currentPopulation += growthRate;
+
+                // Ensure non-negative
+                if (currentPopulation < 0) currentPopulation = 0;
+
+                elapsedMinutes += 1;
+
+                // Update data arrays
+                timeData.push(elapsedMinutes);
+                populationData.push(Math.round(currentPopulation));
+                tempData.push(parseFloat(document.getElementById('temperature').value));
+                phData.push(parseFloat(document.getElementById('ph').value));
+
+                // Keep only last 200 data points
+                if (timeData.length > 200) {
+                    timeData.shift();
+                    populationData.shift();
+                    tempData.shift();
+                    phData.shift();
+                }
+
+                updateDisplay();
+                updateCharts();
+                updatePetriDish();
+                updatePhase();
+            }, 100); // 100ms = 1 simulated minute
+        }
+
+        function stopSimulation() {
+            isRunning = false;
+            document.getElementById('startBtn').disabled = false;
+
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+                simulationInterval = null;
+            }
+        }
+
+        function resetSimulation() {
+            stopSimulation();
+
+            currentPopulation = parseFloat(document.getElementById('initialPopulation').value);
+            elapsedMinutes = 0;
+
+            // Clear data arrays
+            timeData.length = 0;
+            populationData.length = 0;
+            tempData.length = 0;
+            phData.length = 0;
+
+            timeData.push(0);
+            populationData.push(currentPopulation);
+            tempData.push(parseFloat(document.getElementById('temperature').value));
+            phData.push(parseFloat(document.getElementById('ph').value));
+
+            // Clear petri dish
+            bacteriaDots.forEach(dot => dot.remove());
+            bacteriaDots = [];
+
+            updateDisplay();
+            updateCharts();
+            updatePetriDish();
+            updatePhase();
+        }
+
+        function updateDisplay() {
+            // Time
+            const hours = Math.floor(elapsedMinutes / 60);
+            const mins = elapsedMinutes % 60;
+            document.getElementById('timeDisplay').textContent =
+                hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+
+            // Population
+            let popText;
+            if (currentPopulation >= 1000000) {
+                popText = (currentPopulation / 1000000).toFixed(2) + 'M';
+            } else if (currentPopulation >= 1000) {
+                popText = (currentPopulation / 1000).toFixed(1) + 'K';
+            } else {
+                popText = Math.round(currentPopulation).toString();
+            }
+            document.getElementById('populationDisplay').textContent = popText;
+
+            // Generation (based on doubling time)
+            const initialPop = parseFloat(document.getElementById('initialPopulation').value);
+            const generations = currentPopulation > initialPop ?
+                Math.log2(currentPopulation / initialPop) : 0;
+            document.getElementById('generationDisplay').textContent = generations.toFixed(1);
+        }
+
+        function updateCharts() {
+            growthChart.data.labels = timeData;
+            growthChart.data.datasets[0].data = populationData;
+            growthChart.update('none');
+
+            tempChart.data.labels = timeData;
+            tempChart.data.datasets[0].data = tempData;
+            tempChart.update('none');
+
+            phChart.data.labels = timeData;
+            phChart.data.datasets[0].data = phData;
+            phChart.update('none');
+        }
+
+        function saveSimulation() {
+            const data = {
+                bacteria: selectedBacteria,
+                settings: {
+                    initialPopulation: parseFloat(document.getElementById('initialPopulation').value),
+                    growthConstant: parseFloat(document.getElementById('growthConstant').value),
+                    carryingCapacity: parseFloat(document.getElementById('carryingCapacity').value),
+                    temperature: parseFloat(document.getElementById('temperature').value),
+                    ph: parseFloat(document.getElementById('ph').value)
+                },
+                state: {
+                    currentPopulation: currentPopulation,
+                    elapsedMinutes: elapsedMinutes
+                },
+                history: {
+                    time: timeData,
+                    population: populationData,
+                    temperature: tempData,
+                    ph: phData
+                }
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `bacteria-simulation-${new Date().toISOString().slice(0, 10)}.json`;
+            a.click();
+
+            URL.revokeObjectURL(url);
+        }
+
+        function loadSimulation(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+
+                    // Load settings
+                    document.getElementById('bacteriaSelect').value = data.bacteria;
+                    document.getElementById('initialPopulation').value = data.settings.initialPopulation;
+                    document.getElementById('growthConstant').value = data.settings.growthConstant;
+                    document.getElementById('carryingCapacity').value = data.settings.carryingCapacity;
+                    document.getElementById('temperature').value = data.settings.temperature;
+                    document.getElementById('ph').value = data.settings.ph;
+
+                    // Load state
+                    currentPopulation = data.state.currentPopulation;
+                    elapsedMinutes = data.state.elapsedMinutes;
+
+                    // Load history
+                    timeData.length = 0;
+                    populationData.length = 0;
+                    tempData.length = 0;
+                    phData.length = 0;
+
+                    data.history.time.forEach(t => timeData.push(t));
+                    data.history.population.forEach(p => populationData.push(p));
+                    data.history.temperature.forEach(t => tempData.push(t));
+                    data.history.ph.forEach(p => phData.push(p));
+
+                    // Update UI
+                    selectBacteria();
+                    updateSliderDisplay();
+                    updateDisplay();
+                    updateCharts();
+                    updatePetriDish();
+                    updatePhase();
+
+                    alert('Simulering laddad!');
+                } catch (err) {
+                    alert('Fel vid laddning av fil: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        // Initialize
+        selectBacteria();
+        updateSliderDisplay();
+        updateDisplay();
+        updatePetriDish();
+        updatePhase();
+    </script>
+</body>
+</html>

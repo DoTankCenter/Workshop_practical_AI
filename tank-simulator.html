@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tank Vattennivå Simulator</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        h1 {
+            text-align: center;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+            justify-content: center;
+        }
+
+        .controls-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 320px;
+        }
+
+        .controls-panel h2 {
+            margin-top: 0;
+            color: #2d3436;
+            font-size: 18px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #2d3436;
+            font-size: 14px;
+        }
+
+        .control-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .control-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .unit {
+            font-size: 12px;
+            color: #636e72;
+            margin-top: 3px;
+        }
+
+        .visualization-panel {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            width: 500px;
+        }
+
+        .tank-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 40px;
+        }
+
+        .tank {
+            position: relative;
+            width: 200px;
+            height: 300px;
+            border: 6px solid #2d3436;
+            border-top: none;
+            background: #f0f0f0;
+            border-radius: 0 0 10px 10px;
+        }
+
+        .tank-top {
+            position: absolute;
+            top: -6px;
+            left: -6px;
+            right: -6px;
+            height: 6px;
+            background: #2d3436;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .water {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, #74b9ff 0%, #0984e3 100%);
+            border-radius: 0 0 6px 6px;
+            transition: height 0.3s ease;
+        }
+
+        .water-level-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            z-index: 10;
+        }
+
+        /* Inflow pipe - main */
+        .inflow-main {
+            position: absolute;
+            top: 20px;
+            left: -80px;
+            width: 80px;
+            height: 20px;
+            background: #636e72;
+            border-radius: 5px 0 0 5px;
+        }
+
+        .inflow-main::after {
+            content: 'Påfyllning';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            font-size: 11px;
+            color: #2d3436;
+            white-space: nowrap;
+        }
+
+        .inflow-main-water {
+            position: absolute;
+            top: 20px;
+            left: -74px;
+            width: 74px;
+            height: 14px;
+            background: #74b9ff;
+            border-radius: 5px 0 0 5px;
+            opacity: 0;
+            animation: none;
+        }
+
+        .inflow-main-water.flowing {
+            opacity: 1;
+            animation: flowRight 0.5s linear infinite;
+        }
+
+        /* Inflow pipe - secondary */
+        .inflow-secondary {
+            position: absolute;
+            top: 80px;
+            left: -80px;
+            width: 80px;
+            height: 20px;
+            background: #636e72;
+            border-radius: 5px 0 0 5px;
+        }
+
+        .inflow-secondary::after {
+            content: 'Anslutning';
+            position: absolute;
+            top: -20px;
+            left: 0;
+            font-size: 11px;
+            color: #2d3436;
+            white-space: nowrap;
+        }
+
+        .inflow-secondary-water {
+            position: absolute;
+            top: 80px;
+            left: -74px;
+            width: 74px;
+            height: 14px;
+            background: #81ecec;
+            border-radius: 5px 0 0 5px;
+            opacity: 0;
+        }
+
+        .inflow-secondary-water.flowing {
+            opacity: 1;
+            animation: flowRight 0.5s linear infinite;
+        }
+
+        /* Outflow pipe */
+        .outflow {
+            position: absolute;
+            bottom: 20px;
+            right: -80px;
+            width: 80px;
+            height: 20px;
+            background: #636e72;
+            border-radius: 0 5px 5px 0;
+        }
+
+        .outflow::after {
+            content: 'Avlopp';
+            position: absolute;
+            top: -20px;
+            right: 0;
+            font-size: 11px;
+            color: #2d3436;
+            white-space: nowrap;
+        }
+
+        .outflow-water {
+            position: absolute;
+            bottom: 20px;
+            right: -74px;
+            width: 74px;
+            height: 14px;
+            background: #0984e3;
+            border-radius: 0 5px 5px 0;
+            opacity: 0;
+        }
+
+        .outflow-water.flowing {
+            opacity: 1;
+            animation: flowRight 0.5s linear infinite;
+        }
+
+        /* Valve indicator */
+        .valve {
+            position: absolute;
+            bottom: 15px;
+            right: -50px;
+            width: 30px;
+            height: 30px;
+            background: #d63031;
+            border-radius: 50%;
+            border: 3px solid #2d3436;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            color: white;
+            font-weight: bold;
+        }
+
+        @keyframes flowRight {
+            0% {
+                background-position: 0 0;
+            }
+            100% {
+                background-position: 20px 0;
+            }
+        }
+
+        .inflow-main-water, .inflow-secondary-water, .outflow-water {
+            background: repeating-linear-gradient(
+                90deg,
+                #74b9ff,
+                #74b9ff 10px,
+                #0984e3 10px,
+                #0984e3 20px
+            );
+            background-size: 20px 100%;
+        }
+
+        .status-panel {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .status-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-label {
+            color: #636e72;
+        }
+
+        .status-value {
+            font-weight: bold;
+            color: #2d3436;
+        }
+
+        .status-value.positive {
+            color: #00b894;
+        }
+
+        .status-value.negative {
+            color: #d63031;
+        }
+
+        .status-value.warning {
+            color: #fdcb6e;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .start-btn {
+            background: #00b894;
+            color: white;
+        }
+
+        .stop-btn {
+            background: #d63031;
+            color: white;
+        }
+
+        .reset-btn {
+            background: #636e72;
+            color: white;
+        }
+
+        .overflow-warning {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #d63031;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .overflow-warning.visible {
+            opacity: 1;
+        }
+
+        .empty-warning {
+            position: absolute;
+            bottom: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fdcb6e;
+            color: #2d3436;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .empty-warning.visible {
+            opacity: 1;
+        }
+
+        .time-display {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #2d3436;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tank Vattennivå Simulator</h1>
+
+    <div class="container">
+        <div class="controls-panel">
+            <h2>Tank Inställningar</h2>
+            <div class="control-group">
+                <label for="tankCapacity">Tankens kapacitet</label>
+                <input type="number" id="tankCapacity" value="10" min="1" step="0.1">
+                <div class="unit">m³ (kubikmeter)</div>
+            </div>
+            <div class="control-group">
+                <label for="initialLevel">Startnivå</label>
+                <input type="number" id="initialLevel" value="5" min="0" step="0.1">
+                <div class="unit">m³ (kubikmeter)</div>
+            </div>
+
+            <h2>Inflöden</h2>
+            <div class="control-group">
+                <label for="mainInflow">Påfyllning (huvudkran)</label>
+                <input type="number" id="mainInflow" value="0.5" min="0" step="0.01">
+                <div class="unit">m³/min</div>
+            </div>
+            <div class="control-group">
+                <label for="secondaryInflow">Anslutning (extra inflöde)</label>
+                <input type="number" id="secondaryInflow" value="0.2" min="0" step="0.01">
+                <div class="unit">m³/min</div>
+            </div>
+
+            <h2>Utflöde</h2>
+            <div class="control-group">
+                <label for="outflow">Avlopp/Dränering</label>
+                <input type="number" id="outflow" value="0.4" min="0" step="0.01">
+                <div class="unit">m³/min</div>
+            </div>
+
+            <div class="buttons">
+                <button class="start-btn" id="startBtn" onclick="startSimulation()">Start</button>
+                <button class="stop-btn" id="stopBtn" onclick="stopSimulation()">Stopp</button>
+                <button class="reset-btn" onclick="resetSimulation()">Reset</button>
+            </div>
+        </div>
+
+        <div class="visualization-panel">
+            <div class="time-display">Tid: <span id="timeDisplay">0:00</span></div>
+
+            <div class="tank-container">
+                <div class="tank">
+                    <div class="tank-top"></div>
+                    <div class="water" id="water">
+                        <div class="water-level-text" id="waterLevelText">50%</div>
+                    </div>
+
+                    <div class="overflow-warning" id="overflowWarning">OVERFLOW!</div>
+                    <div class="empty-warning" id="emptyWarning">TOM!</div>
+
+                    <!-- Pipes -->
+                    <div class="inflow-main"></div>
+                    <div class="inflow-main-water" id="inflowMainWater"></div>
+
+                    <div class="inflow-secondary"></div>
+                    <div class="inflow-secondary-water" id="inflowSecondaryWater"></div>
+
+                    <div class="outflow"></div>
+                    <div class="outflow-water" id="outflowWater"></div>
+                    <div class="valve" id="valve">V</div>
+                </div>
+            </div>
+
+            <div class="status-panel">
+                <div class="status-item">
+                    <span class="status-label">Nuvarande volym:</span>
+                    <span class="status-value" id="currentVolume">5.00 m³</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Fyllnadsgrad:</span>
+                    <span class="status-value" id="fillPercentage">50%</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Totalt inflöde:</span>
+                    <span class="status-value positive" id="totalInflow">0.70 m³/min</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Utflöde:</span>
+                    <span class="status-value negative" id="totalOutflow">0.40 m³/min</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-label">Nettoflöde:</span>
+                    <span class="status-value" id="netFlow">+0.30 m³/min</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isRunning = false;
+        let simulationInterval = null;
+        let currentVolume = 5;
+        let elapsedSeconds = 0;
+
+        // Initialize
+        updateDisplay();
+        updateFlowAnimations();
+
+        function getValues() {
+            return {
+                tankCapacity: parseFloat(document.getElementById('tankCapacity').value) || 10,
+                mainInflow: parseFloat(document.getElementById('mainInflow').value) || 0,
+                secondaryInflow: parseFloat(document.getElementById('secondaryInflow').value) || 0,
+                outflow: parseFloat(document.getElementById('outflow').value) || 0
+            };
+        }
+
+        function startSimulation() {
+            if (isRunning) return;
+
+            isRunning = true;
+            document.getElementById('startBtn').disabled = true;
+
+            // Initialize volume from initial level if first start
+            if (elapsedSeconds === 0) {
+                const initialLevel = parseFloat(document.getElementById('initialLevel').value) || 0;
+                const capacity = getValues().tankCapacity;
+                currentVolume = Math.min(initialLevel, capacity);
+            }
+
+            simulationInterval = setInterval(() => {
+                const values = getValues();
+
+                // Calculate flow per interval (100ms = 1/600 of a minute)
+                const totalInflow = values.mainInflow + values.secondaryInflow;
+                const netFlow = totalInflow - values.outflow;
+                const volumeChange = netFlow / 600; // per 100ms
+
+                // Update volume
+                currentVolume += volumeChange;
+
+                // Clamp volume
+                if (currentVolume > values.tankCapacity) {
+                    currentVolume = values.tankCapacity;
+                }
+                if (currentVolume < 0) {
+                    currentVolume = 0;
+                }
+
+                elapsedSeconds += 0.1;
+
+                updateDisplay();
+                updateFlowAnimations();
+            }, 100);
+        }
+
+        function stopSimulation() {
+            isRunning = false;
+            document.getElementById('startBtn').disabled = false;
+
+            if (simulationInterval) {
+                clearInterval(simulationInterval);
+                simulationInterval = null;
+            }
+
+            updateFlowAnimations();
+        }
+
+        function resetSimulation() {
+            stopSimulation();
+
+            const initialLevel = parseFloat(document.getElementById('initialLevel').value) || 0;
+            const capacity = getValues().tankCapacity;
+            currentVolume = Math.min(initialLevel, capacity);
+            elapsedSeconds = 0;
+
+            updateDisplay();
+            updateFlowAnimations();
+        }
+
+        function updateDisplay() {
+            const values = getValues();
+            const percentage = (currentVolume / values.tankCapacity) * 100;
+
+            // Update water level
+            const water = document.getElementById('water');
+            water.style.height = `${percentage}%`;
+
+            // Update water level text
+            document.getElementById('waterLevelText').textContent = `${Math.round(percentage)}%`;
+
+            // Update time
+            const minutes = Math.floor(elapsedSeconds / 60);
+            const seconds = Math.floor(elapsedSeconds % 60);
+            document.getElementById('timeDisplay').textContent =
+                `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+            // Update status
+            document.getElementById('currentVolume').textContent = `${currentVolume.toFixed(2)} m³`;
+            document.getElementById('fillPercentage').textContent = `${percentage.toFixed(1)}%`;
+
+            const totalInflow = values.mainInflow + values.secondaryInflow;
+            document.getElementById('totalInflow').textContent = `${totalInflow.toFixed(2)} m³/min`;
+            document.getElementById('totalOutflow').textContent = `${values.outflow.toFixed(2)} m³/min`;
+
+            const netFlow = totalInflow - values.outflow;
+            const netFlowElement = document.getElementById('netFlow');
+            const sign = netFlow >= 0 ? '+' : '';
+            netFlowElement.textContent = `${sign}${netFlow.toFixed(2)} m³/min`;
+
+            if (netFlow > 0) {
+                netFlowElement.className = 'status-value positive';
+            } else if (netFlow < 0) {
+                netFlowElement.className = 'status-value negative';
+            } else {
+                netFlowElement.className = 'status-value';
+            }
+
+            // Warnings
+            const overflowWarning = document.getElementById('overflowWarning');
+            const emptyWarning = document.getElementById('emptyWarning');
+
+            if (percentage >= 100) {
+                overflowWarning.classList.add('visible');
+            } else {
+                overflowWarning.classList.remove('visible');
+            }
+
+            if (percentage <= 0) {
+                emptyWarning.classList.add('visible');
+            } else {
+                emptyWarning.classList.remove('visible');
+            }
+        }
+
+        function updateFlowAnimations() {
+            const values = getValues();
+
+            const mainWater = document.getElementById('inflowMainWater');
+            const secondaryWater = document.getElementById('inflowSecondaryWater');
+            const outflowWater = document.getElementById('outflowWater');
+
+            if (isRunning) {
+                if (values.mainInflow > 0) {
+                    mainWater.classList.add('flowing');
+                } else {
+                    mainWater.classList.remove('flowing');
+                }
+
+                if (values.secondaryInflow > 0) {
+                    secondaryWater.classList.add('flowing');
+                } else {
+                    secondaryWater.classList.remove('flowing');
+                }
+
+                if (values.outflow > 0 && currentVolume > 0) {
+                    outflowWater.classList.add('flowing');
+                } else {
+                    outflowWater.classList.remove('flowing');
+                }
+            } else {
+                mainWater.classList.remove('flowing');
+                secondaryWater.classList.remove('flowing');
+                outflowWater.classList.remove('flowing');
+            }
+        }
+
+        // Update display when inputs change
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => {
+                updateDisplay();
+                updateFlowAnimations();
+            });
+        });
+    </script>
+</body>
+</html>
